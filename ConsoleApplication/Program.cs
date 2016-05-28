@@ -50,7 +50,7 @@ namespace ConsoleApplication
 
         private async static Task<string> GetAccessToken()
         {
-            AuthenticationContext authContext = new AuthenticationContext(AzureAdAuthenticationUrl + "onebit101.onmicrosoft.com", true);
+            AuthenticationContext authContext = new AuthenticationContext(AzureAdAuthenticationUrl + "onebit.onmicrosoft.com", true);
 
             ClientCredential credentials = new ClientCredential(ClientId, ClientSecret);
 
