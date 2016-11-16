@@ -10,9 +10,11 @@ namespace ConsoleApplication
 {
     class Program
     {
-        static string AzureAdAuthenticationUrl = "https://login.windows.net/";
-        static string ClientId = "Enter Client Id";
-        static string ClientSecret = "Enter secret";
+        static string AzureAdAuthenticationUrl  = "https://login.windows.net/";
+        static string GraphApiUrl               = "https://graph.windows.net/";
+        static string TenantDomain              = "CIECOM386698.onmicrosoft.com";
+        static string ClientId                  = "Enter Client ID";
+        static string ClientSecret              = "Enter Client Secret";
 
         static void Main(string[] args)
         {
@@ -25,38 +27,57 @@ namespace ConsoleApplication
             Console.ReadKey();
         }
 
-        private async static Task DisplayUsers(ActiveDirectoryClient graphClient)
+        /// <summary>
+        /// Gets users and displays them to the console 
+        /// </summary>
+        /// <param name="aadClient">An ActiveDirectoryClient</param>
+        /// <returns></returns>
+        private async static Task DisplayUsers(ActiveDirectoryClient aadClient)
         {
             List<IUser> users = new List<IUser>();
-            var usersPagedCollection = await graphClient.Users.ExecuteAsync();
+            var usersPagedCollection = await aadClient.Users.ExecuteAsync();
 
             do
             {
                 users.AddRange(usersPagedCollection.CurrentPage.ToList());
                 usersPagedCollection = await usersPagedCollection.GetNextPageAsync();
-            } while (usersPagedCollection != null && usersPagedCollection.MorePagesAvailable);
+            } while (
+                usersPagedCollection != null && usersPagedCollection.MorePagesAvailable
+            );
 
             foreach (var item in users)
             {
-                Console.WriteLine($"User: {item.DisplayName} {item.Mail}");
+                Console.WriteLine($"User: {item.DisplayName} Upn: {item.UserPrincipalName}");
             }
         }
 
+        /// <summary>
+        /// Returns an ActiveDirectoryClient based on the Graph URL and Tenant domain
+        /// </summary>
+        /// <returns></returns>
         private static ActiveDirectoryClient GetGraphClient()
         {
-            ActiveDirectoryClient graphClient = new ActiveDirectoryClient(new Uri("https://graph.windows.net/onebit101.onmicrosoft.com"), () => GetAccessToken());
+            ActiveDirectoryClient graphClient = 
+                new ActiveDirectoryClient(
+                    new Uri(GraphApiUrl + TenantDomain),
+                    () => GetAccessToken());
             return graphClient;
         }
 
+        /// <summary>
+        /// Grabs an access token by using a ClientID and ClientSecret
+        /// </summary>
+        /// <returns></returns>
         private async static Task<string> GetAccessToken()
         {
-            AuthenticationContext authContext = new AuthenticationContext(AzureAdAuthenticationUrl + "onebit.onmicrosoft.com", true);
+            AuthenticationContext authContext = 
+                new AuthenticationContext(AzureAdAuthenticationUrl + TenantDomain, true);
 
             ClientCredential credentials = new ClientCredential(ClientId, ClientSecret);
 
-            var result = await authContext.AcquireTokenAsync("https://graph.windows.net", credentials);
+            var tokenResult = await authContext.AcquireTokenAsync(GraphApiUrl, credentials);
 
-            return result.AccessToken;
+            return tokenResult.AccessToken;
         }
     }
 }
